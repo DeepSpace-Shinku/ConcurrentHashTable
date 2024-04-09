@@ -7,7 +7,7 @@
  We can achieve a good speedup when `NUM_ITEMS` is large. For example, when `NUM_ITEMS=50000000`. Specify `DNUM_THREADS` to different values to see the run time for different threads. Compile the source file with: 
 
 ```
-g++ -O3 -fopenmp -DNUM_ITEMS=50000000 -DNUM_THREADS=1 -DKEYS=100 -o ./LockFreeHashTable
+g++ -O3 -fopenmp -DNUM_ITEMS=50000000 -DNUM_THREADS=1 -DKEYS=100 -o ./LockbasedHashTable ./LockbasedHashTable.cpp
 ```
 
 Run the program with:
