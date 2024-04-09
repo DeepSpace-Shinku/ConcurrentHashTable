@@ -197,6 +197,7 @@ int main(int argc, char** argv) {
 #pragma omp parallel num_threads(NUM_THREADS)
     {
         int tid = omp_get_thread_num(); // Get the thread ID in the current context
+        #pragma omp for
         for (int i = tid; i < NUM_ITEMS; i += NUM_THREADS) {
             // Perform operations based on the op array
             switch(op[i]) {
