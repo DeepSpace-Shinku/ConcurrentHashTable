@@ -151,8 +151,10 @@ int main() {
     #pragma omp parallel for
     for (int i = 0; i < 5; i++) {
         if (!list.Insert(duplicateKey)) {
+            #pragma omp critical
             std::cout << "Thread " << omp_get_thread_num() << ": Duplicate insert of key " << duplicateKey << " detected and prevented." << std::endl;
         } else if (i == 0) { // Assume first thread successfully inserts it
+            #pragma omp critical
             std::cout << "Thread " << omp_get_thread_num() << ": First insert of duplicate key " << duplicateKey << " successful." << std::endl;
         }
     }
