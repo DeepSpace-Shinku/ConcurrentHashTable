@@ -144,7 +144,6 @@ bool lbht::Contain(LL key)
 }
 
 int main() {
-int main() {
     lbht_list list;  // Create an instance of lbht_list
 
     const int NUM_KEYS = 5;
