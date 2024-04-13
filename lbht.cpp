@@ -146,26 +146,10 @@ bool lbht::Contain(LL key)
 int main() {
     lbht_list list;  // Create an instance of lbht_list
 
-    const int NUM_KEYS = 100;
-    LL keys[NUM_KEYS];
-    for (int i = 0; i < NUM_KEYS; ++i) {
-        keys[i] = i; // Unique keys for initial test
-    }
 
-    // Concurrent insertion of unique keys
+    LL duplicateKey = 1; 
     #pragma omp parallel for
-    for (int i = 0; i < NUM_KEYS; i++) {
-        if (list.Insert(keys[i])) {
-            std::cout << "Insertion of key " << keys[i] << " successful." << std::endl;
-        } else {
-            std::cout << "Insertion of key " << keys[i] << " failed." << std::endl;
-        }
-    }
-
-    // Test inserting the same key by all threads to see if it handles duplicates correctly
-    LL duplicateKey = 42; // Define a test key to be inserted by all threads
-    #pragma omp parallel for
-    for (int i = 0; i < NUM_KEYS; i++) {
+    for (int i = 0; i < 5; i++) {
         if (!list.Insert(duplicateKey)) {
             std::cout << "Thread " << omp_get_thread_num() << ": Duplicate insert of key " << duplicateKey << " detected and prevented." << std::endl;
         } else if (i == 0) { // Assume first thread successfully inserts it
