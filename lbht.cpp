@@ -6,6 +6,7 @@
 #include "time.h"
 #include "omp.h"
 #include "sys/time.h"
+#include <iostream>
 
 // Constructor
 lbht_node::lbht_node(LL k) : key(k), next(NULL) {}
