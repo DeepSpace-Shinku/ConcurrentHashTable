@@ -19,9 +19,10 @@ typedef unsigned int LL;
 #define DELETE (1)
 #define SEARCH (2)
 
-LL items[NUM_ITEMS];     // Array of keys associated with operations
-LL op[NUM_ITEMS];        // Array of operations
-LL result[NUM_ITEMS];    // Array of outcomes
+LL* items;     
+LL* op;        
+LL* result;   
+int NUM_ITEMS, NUM_THREADS, KEYS;
 
 class Node
 {
@@ -57,15 +58,28 @@ public:
         }
     }
 
-    bool Add(LL key)
-    {
-        omp_set_lock(&listLock); // Lock the list
+    bool Add(LL key) {
+      omp_set_lock(&listLock); // Acquire lock
+
+      Node* pred = head;
+      Node* curr = head->next;
+
+      // Traverse the list to find the insert location or existing key
+      while (curr != nullptr && curr->key < key) {
+        pred = curr;
+        curr = curr->next;
+      }
+
+      if (curr != nullptr && curr->key == key) {
+        omp_unset_lock(&listLock); // Key found, release lock and return false
+        return false;
+      } else {
         Node* newNode = new Node(key);
-        // Always add at the beginning for simplicity (not sorted)
-        newNode->next = head->next;
-        head->next = newNode;
-        omp_unset_lock(&listLock); // Unlock the list
-        return true; // Simplification: always returns true
+        newNode->next = curr;
+        pred->next = newNode;
+        omp_unset_lock(&listLock); // Release lock
+        return true;
+      }
     }
 
     bool Delete(LL key)
@@ -151,13 +165,22 @@ public:
 // omp.h is included for OpenMP support
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
-        printf("Need two arguments: percent add ops and percent delete ops (e.g., 30 50 for 30%% add and 50%% delete).\nAborting...\n");
+    if (argc != 6) {
+        printf("Usage: %s <NUM_ITEMS> <NUM_THREADS> <KEYS> <percent add ops> <percent delete ops>\n", argv[0]);
         exit(1);
     }
 
-    int adds = atoi(argv[1]);
-    int deletes = atoi(argv[2]);
+    // Parse the command-line arguments for the parameters
+    NUM_ITEMS = atoi(argv[1]);
+    NUM_THREADS = atoi(argv[2]);
+    KEYS = atoi(argv[3]);
+    int adds = atoi(argv[4]);
+    int deletes = atoi(argv[5]);
+
+    // Allocate memory for the arrays based on NUM_ITEMS
+    items = new LL[NUM_ITEMS];
+    op = new LL[NUM_ITEMS];
+    result = new LL[NUM_ITEMS];
 
     if (adds + deletes > 100) {
         printf("Sum of add and delete percentages exceeds 100.\nAborting...\n");
@@ -165,7 +188,6 @@ int main(int argc, char** argv) {
     }
 
     srand(0);
-
     // Initialize operation arrays similar to the original code
 
     for (int i = 0; i < NUM_ITEMS; i++) {
@@ -219,6 +241,8 @@ int main(int argc, char** argv) {
     // Calculate and print elapsed time in ms
     printf("%lf\n", ((double)((tv1.tv_sec - tv0.tv_sec) * 1000000 + (tv1.tv_usec - tv0.tv_usec))) / 1000.0);
 
+    delete[] items;
+    delete[] op;
+    delete[] result;
     return 0;
 }
-
