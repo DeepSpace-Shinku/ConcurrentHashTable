@@ -144,20 +144,34 @@ bool lbht::Contain(LL key)
 }
 
 int main() {
+int main() {
     lbht_list list;  // Create an instance of lbht_list
 
+    const int NUM_KEYS = 5;
+    LL duplicateKey = 5; // Define a test key to be inserted by all threads
+    int num_threads;
 
-    LL duplicateKey = 1; 
+    // Prepare a vector of stringstreams for collecting outputs, one per thread
+    #pragma omp parallel
+    {
+        #pragma omp single
+        num_threads = omp_get_num_threads(); // Get the number of threads being used
+    }
+    std::vector<std::stringstream> thread_outputs(num_threads);
+
+    // Test inserting the same key by all threads to see if it handles duplicates correctly
     #pragma omp parallel for
-    for (int i = 0; i < 5; i++) {
-        if (!list.Insert(duplicateKey)) {
-            #pragma omp critical
-            std::cout << "Thread " << omp_get_thread_num() << ": Duplicate insert of key " << duplicateKey << " detected and prevented." << std::endl;
-        } else if (i == 0) { // Assume first thread successfully inserts it
-            #pragma omp critical
-            std::cout << "Thread " << omp_get_thread_num() << ": First insert of duplicate key " << duplicateKey << " successful." << std::endl;
-        }
+    for (int i = 0; i < NUM_KEYS; i++) {
+        int thread_id = omp_get_thread_num();
+        bool result = list.Insert(duplicateKey);
+        thread_outputs[thread_id] << "Thread " << thread_id << " insert " << duplicateKey << ": " << (result ? "true" : "false") << std::endl;
+    }
+
+    // After all threads are done, print all messages
+    for (int i = 0; i < num_threads; ++i) {
+        std::cout << thread_outputs[i].str();
     }
 
     return 0;
+}
 }
