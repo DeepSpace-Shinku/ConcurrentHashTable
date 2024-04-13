@@ -142,130 +142,35 @@ bool lbht::Contain(LL key)
     return buckets[index]->Contain(key);
 }
 
-// Main function
-int main(int argc, char **argv)
-{
-    if (argc != 6)
-    {
-        printf("Usage: %s <Number of keys> <Number of threads> <Range of keys> <Insert methods percentage> <Delete methods percentage>\n", argv[0]);
-        exit(1);
+int main() {
+    lbht_list list;  // Create an instance of lbht_list
+
+    const int NUM_KEYS = 100;
+    LL keys[NUM_KEYS];
+    for (int i = 0; i < NUM_KEYS; ++i) {
+        keys[i] = i; // Unique keys for initial test
     }
 
-    keys_ct = atoi(argv[1]);
-    threads_ct = atoi(argv[2]);
-    keys_rg = atoi(argv[3]);
-    int inserts = atoi(argv[4]);
-    int deletes = atoi(argv[5]);
-
-    keys = new LL[keys_ct];
-    mthds = new LL[keys_ct];
-    outs = new LL[keys_ct];
-
-    if (inserts + deletes > 100)
-    {
-        printf("Sum of Insert and Delete percentages is greater than 100%.\nexiting...\n");
-        exit(1);
-    }
-
-    srand(0);
-
-    for (int i = 0; i < keys_ct; i++)
-    {
-        keys[i] = 10 + rand() % keys_rg; // keys_rg is the range of integer keys
-    }
-
-    int totalIns = (keys_ct * inserts) / 100;
-    int totalDeletes = (keys_ct * deletes) / 100;
-
-    for (int i = 0; i < totalIns; i++)
-    {
-        mthds[i] = INSERT;
-    }
-    for (int i = totalIns; i < totalIns + totalDeletes; i++)
-    {
-        mthds[i] = DELETE;
-    }
-    for (int i = totalIns + totalDeletes; i < keys_ct; i++)
-    {
-        mthds[i] = CONTAIN;
-    }
-
-    lbht h;
-
-    struct timeval val_s, val_e;
-
-    gettimeofday(&val_s, NULL);
-
-    // Parallel section
-    // We will use OpenMP to parallelize this loop
-#pragma omp parallel num_threads(threads_ct)
-    {
-        int tid = omp_get_thread_num(); // Get the thread ID in the current context
-#pragma omp for
-        for (int i = tid; i < keys_ct; i += threads_ct)
-        {
-            // Perform operations based on the mthds array
-            switch (mthds[i])
-            {
-            case INSERT:
-                outs[i] = 200 + h.Insert(keys[i]);
-                break;
-            case DELETE:
-                outs[i] = 400 + h.Delete(keys[i]);
-                break;
-            case CONTAIN:
-                outs[i] = 600 + h.Contain(keys[i]);
-                break;
-            }
+    // Concurrent insertion of unique keys
+    #pragma omp parallel for
+    for (int i = 0; i < NUM_KEYS; i++) {
+        if (list.Insert(keys[i])) {
+            std::cout << "Insertion of key " << keys[i] << " successful." << std::endl;
+        } else {
+            std::cout << "Insertion of key " << keys[i] << " failed." << std::endl;
         }
     }
 
-    gettimeofday(&val_e, NULL);
-
-    // Calculate elapsed time in ms
-    printf("%lf\n", ((double)((val_e.tv_sec - val_s.tv_sec) * 1000000 + (val_e.tv_usec - val_s.tv_usec))) / 1000.0);
-
-    // printf("Operation results:\n");
-    // for(int i = 0; i < keys_ct; i++) {
-    //     printf("result[%d] = %lld\n", i, outs[i]);
-    // }
-
-    delete[] keys;
-    delete[] mthds;
-    delete[] outs;
-
-    // srand(time(NULL));
-    // lbht h2;
-
-    // const int numKeys = 20;
-    // LL keys[numKeys];
-    // lbht_node* nodes[numKeys];
-
-    // // Generate and add 10 keys
-    // for (int i = 0; i < numKeys; ++i) {
-    //     keys[i] = rand(); // Generate a random key
-    //     // nodes[i] = new lbht_node(keys[i]); // Create a node for each key
-    //     bool addResult = h2.Insert(keys[i]);
-    //     std::cout << "Adding key " << keys[i] << ": " << (addResult ? "Success" : "Failure") << std::endl;
-    // }
-
-    // // Contain for the 10 keys
-    // for (int i = 0; i < numKeys; ++i) {
-    //     bool searchResult = h2.Contain(keys[i]);
-    //     std::cout << "Searching for key " << keys[i] << ": " << (searchResult ? "Found" : "Not Found") << std::endl;
-    // }
-
-    // // Delete the 10 keys
-    // for (int i = 0; i < numKeys; ++i) {
-    //     bool deleteResult = h2.Delete(keys[i]);
-    //     std::cout << "Deleting key " << keys[i] << ": " << (deleteResult ? "Success" : "Failure") << std::endl;
-    // }
-
-    // // Contain for the 10 keys again
-    // for (int i = 0; i < numKeys; ++i) {
-    //     bool searchResult = h2.Contain(keys[i]);
-    //     std::cout << "Searching for key " << keys[i] << " after deletion: " << (searchResult ? "Found" : "Not Found") << std::endl;
-    // }
+    // Test inserting the same key by all threads to see if it handles duplicates correctly
+    LL duplicateKey = 42; // Define a test key to be inserted by all threads
+    #pragma omp parallel for
+    for (int i = 0; i < NUM_KEYS; i++) {
+        if (!list.Insert(duplicateKey)) {
+            std::cout << "Thread " << omp_get_thread_num() << ": Duplicate insert of key " << duplicateKey << " detected and prevented." << std::endl;
+        } else if (i == 0) { // Assume first thread successfully inserts it
+            std::cout << "Thread " << omp_get_thread_num() << ": First insert of duplicate key " << duplicateKey << " successful." << std::endl;
+        }
+    }
 
     return 0;
 }
